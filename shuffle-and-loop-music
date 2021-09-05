@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+#
+# Shuffle a directory of mp3 files and continuosly stream their decoded data to
+# a given fifo.
+#
+# Usage: shuffle-and-loop-music <mp3-dir> <pipe> [now-playing]
+#
+# Author: Dave Eddy <dave@daveeddy.com>
+# Date: September 04, 2021
+# License: MIT
+
+. ./lib/utils || exit 1
+
+dir=$1
+pipe=$2
+nowplaying=$3
+
+usage() {
+	local prog=${0##*/}
+	cat <<-EOF
+	Usage: $prog <mp3-dir> <pipe> [now-playing]
+	EOF
+	exit 1
+}
+
+tmp=$nowplaying.tmp
+
+[[ -n $dir ]] || usage
+[[ -n $pipe ]] || usage
+
+[[ -d $dir ]] || fatal "$dir not a directory"
+
+# ensure the fifo exists and is held open by this program
+mkfifo "$pipe" &>/dev/null
+[[ -p $pipe ]] || fatal "$pipe is not a pipe"
+exec 7<>"$pipe" || fatal "failed to open $pipe"
+
+lastsong=
+currentsong=
+while true; do
+	log 'beginning loop'
+
+	while IFS= read -r -d '' f; do
+		bname=${f##*/}
+		if [[ ! -f $f ]]; then
+			log "skipping $bname - not found"
+			continue
+		fi
+		currentsong=$f
+
+		if [[ $lastsong == "$currentsong" ]]; then
+			log "skipping $bname - was just played"
+			continue
+		else
+			lastsong=
+		fi
+
+		log "playing $bname"
+
+		if [[ -n $nowplaying ]]; then
+			echo "$bname" > "$tmp" &&
+				mv "$tmp" "$nowplaying"
+		fi
+		./mp3-to-raw "$f" > "$pipe" || exit 1
+	done < <(find "$dir" -type f -name '*.mp3' -print0 | shuf -z)
+
+	lastsong=$currentsong
+done

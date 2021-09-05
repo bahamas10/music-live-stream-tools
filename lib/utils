@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# Bash utility functions - meant to be sourced
+#
+# Author: Dave Eddy <dave@daveeddy.com>
+# Date: September 04, 2021
+# License: MIT
+
+fatal() {
+	echo "$@" >&2
+	exit 1
+}
+
+log() {
+	local timefmt='%Y-%m-%dT%H:%M:%S%z'
+	printf "[%($timefmt)T] " -1
+	echo "$@"
+}
