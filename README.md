@@ -45,7 +45,7 @@ file infinitely at the given interval:
     [2021-09-04T21:02:17-0400] 2.93K subscribers - file=foo.txt sleeping for 5
     [2021-09-04T21:02:22-0400] 2.93K subscribers - file=foo.txt sleeping for 5
 
-### `shuffle-and-loop-music'
+### `shuffle-and-loop-music`
 
 Shuffle a directory full of mp3s and stream them to a given fifo pipe
 continuously.  Allows for new tracks to be added without needing to restart this
@@ -67,7 +67,7 @@ And in another terminal:
     $ cat ../data/now-playing.txt
     02-transpose-19.mp3
 
-### `stream-to-youtube'
+### `stream-to-youtube`
 
 The main program to stream to YouTube.  This program is responsible for:
 
@@ -98,7 +98,7 @@ YouTube.  This can then be piped to `ffplay` for testing like:
 
     stream-to-youtube ... - | ffplay -f flv -
 
-### `mp3-to-raw'
+### `mp3-to-raw`
 
 Convert an mp3 to a raw format (s16le PCM 2 channel 44100hz sample) and output
 it to stdout.  This tool is used by `shuffle-and-loop-music` and shouldn't need
