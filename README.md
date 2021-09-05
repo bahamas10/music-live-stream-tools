@@ -45,6 +45,8 @@ file infinitely at the given interval:
     [2021-09-04T21:02:17-0400] 2.93K subscribers - file=foo.txt sleeping for 5
     [2021-09-04T21:02:22-0400] 2.93K subscribers - file=foo.txt sleeping for 5
 
+---
+
 ### `shuffle-and-loop-music`
 
 Shuffle a directory full of mp3s and stream them to a given fifo pipe
@@ -66,6 +68,8 @@ And in another terminal:
 
     $ cat ../data/now-playing.txt
     02-transpose-19.mp3
+
+---
 
 ### `stream-to-youtube`
 
@@ -97,6 +101,8 @@ last argument will tell this program to output to stdout instead of streaming to
 YouTube.  This can then be piped to `ffplay` for testing like:
 
     stream-to-youtube ... - | ffplay -f flv -
+
+---
 
 ### `mp3-to-raw`
 
