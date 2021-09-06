@@ -10,6 +10,7 @@
 
 resolution='1920x1080'
 preset='ultrafast'
+tune='zerolatency'
 bitrate='3500k'
 maxrate='5000k'
 bufsize='8000k'
@@ -100,7 +101,7 @@ ffmpeg \
 	-x264-params "keyint=$doublefps:min-keyint=$doublefps:scenecut=-1" \
 	-r "$fps" -g "$doublefps" \
 	-maxrate "$maxrate" -bufsize "$bufsize" \
-	-preset "$preset" \
+	-preset "$preset" -tune "$tune" \
 	-s "$resolution" \
 	-f flv \
 	"$output"
