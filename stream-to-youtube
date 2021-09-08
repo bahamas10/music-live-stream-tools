@@ -19,7 +19,7 @@ fontcolor='#004500'
 fontsize='38'
 textlocation='x=30:y=h-th-10'
 
-rtmpurl="rtmp://a.rtmp.youtube.com/live2"
+rtmpurl="rtmps://a.rtmp.youtube.com/live2"
 
 usage() {
 	local prog=${0##*/}
