@@ -6,13 +6,22 @@
 # Date: September 04, 2021
 # License: MIT
 
+COLOR_RED=$(tput setaf 1)
+COLOR_MAG=$(tput setaf 5)
+COLOR_RST=$(tput sgr0)
+
 fatal() {
-	echo "$@" >&2
+	printf '%s%s%s\n' "$COLOR_RED" "$*" "$COLOR_RST" >&2
 	exit 1
 }
 
 log() {
 	local timefmt='%Y-%m-%dT%H:%M:%S%z'
-	printf "[%($timefmt)T] " -1
-	echo "$@"
+	printf "[%($timefmt)T] %s\n" -1 "$*"
+}
+
+warn() {
+	echo -n "$COLOR_MAG" >&2
+	log "$@" >&2
+	echo -n "$COLOR_RST" >&2
 }

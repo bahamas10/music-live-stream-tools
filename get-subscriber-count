@@ -12,10 +12,12 @@ channel=$1
 file=$2
 interval=$3
 
+shift 3
+
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	Usage: $prog <channel> [file] [interval]
+	Usage: $prog <channel> [file] [interval] [cmd [args ...]]
 
 	Get the subscriber count for the given YouTube channel.
 
@@ -32,12 +34,20 @@ usage() {
 	    $ cat foo.txt
 	    2.93K subscribers
 
-	With a third argument, the output will is written (atomically) to the
+	With a third argument, the output is written (atomically) to the
 	file infinitely at the given interval:
 
 	    $ ./get-subscriber-count bahamas10 foo.txt 5
 	    [2021-09-04T21:02:17-0400] 2.93K subscribers - file=foo.txt sleeping for 5
 	    [2021-09-04T21:02:22-0400] 2.93K subscribers - file=foo.txt sleeping for 5
+
+	With a fourth argument, the output is written (atomically) to the
+	file infinitely at the given interval, and the command "cmd" is run with
+	any arguments given:
+
+	    $ ./get-subscriber-count bahamas10 foo.txt 5 echo hello world
+	    hello world
+	    [2021-09-10T23:45:03-0400] 2.96K subscribers written to foo.txt sleeping for 5
 	EOF
 }
 
@@ -62,15 +72,13 @@ get-sub-count() {
 	html=$(curl -LsS "$url")
 
 	if (($? != 0)) || [[ -z $html ]]; then
-		echo 'failed to get sub count' >&2
-		return 1
+		fatal 'failed to get sub count'
 	fi
 
 	subcount=$(extract-sub-count <<< "$html")
 
 	if [[ -z $subcount ]]; then
-		echo 'failed to extract sub count' >&2
-		return 1
+		fatal 'failed to extract sub count'
 	fi
 
 	echo "$subcount"
@@ -87,9 +95,18 @@ while true; do
 
 	# $file is set at this point
 	if ((code == 0)); then
-		echo "$subcount" > "$tmp" &&
-			mv "$tmp" "$file"
+		msg=$subcount
+		(echo "$msg" > "$tmp" &&
+			mv "$tmp" "$file") || fatal "failed to write to $file"
 
+		# call command if it was set
+		if [[ -n $1 ]]; then
+			"$@"
+			code=$?
+			if ((code != 0)); then
+				warn "called \`$*\` - exited $code"
+			fi
+		fi
 	fi
 
 	# quit here if no interval
@@ -97,6 +114,6 @@ while true; do
 		exit "$code"
 	fi
 
-	log "$subcount - file=$file sleeping for $interval"
+	log "$subcount written to $file sleeping for $interval"
 	sleep "$interval" || fatal 'failed to sleep'
 done

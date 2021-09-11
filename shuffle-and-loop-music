@@ -15,10 +15,29 @@ dir=$1
 pipe=$2
 nowplaying=$3
 
+shift 3
+
+# audio config
+samplerate=44100
+channels=2
+
+mp3-to-raw() {
+	local mp3=$1
+
+	[[ -n $mp3 ]] || fatal 'mp3-to-raw called without argument'
+
+	ffmpeg \
+		-hide_banner -nostdin -loglevel error \
+		-i "$mp3" \
+		-f s16le -acodec pcm_s16le \
+		-ac "$channels" -ar "$samplerate" \
+		-
+}
+
 usage() {
 	local prog=${0##*/}
 	cat <<-EOF
-	Usage: $prog <mp3-dir> <pipe> [now-playing]
+	Usage: $prog <mp3-dir> <pipe> [now-playing] [cmd [args ...]]
 	EOF
 	exit 1
 }
@@ -42,12 +61,15 @@ while true; do
 
 	while IFS= read -r -d '' f; do
 		bname=${f##*/}
+
+		# skip over files that have been removed
 		if [[ ! -f $f ]]; then
-			log "skipping $bname - not found"
+			warn "skipping $bname - not found"
 			continue
 		fi
 		currentsong=$f
 
+		# skip over this song if it was *just* played
 		if [[ $lastsong == "$currentsong" ]]; then
 			log "skipping $bname - was just played"
 			continue
@@ -57,11 +79,23 @@ while true; do
 
 		log "playing $bname"
 
+		# atomically write the now-playing file if it was set
 		if [[ -n $nowplaying ]]; then
 			echo "$bname" > "$tmp" &&
 				mv "$tmp" "$nowplaying"
 		fi
-		./mp3-to-raw "$f" > "$pipe" || exit 1
+
+		# call command if it was set
+		if [[ -n $1 ]]; then
+			"$@"
+			code=$?
+			if ((code != 0)); then
+				warn "called \`$*\` - exited $code"
+			fi
+		fi
+
+		# play the song!
+		mp3-to-raw "$f" > "$pipe" || log "failed to play $f"
 	done < <(find "$dir" -type f -name '*.mp3' -print0 | shuf -z)
 
 	lastsong=$currentsong
