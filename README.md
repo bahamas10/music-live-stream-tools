@@ -13,6 +13,7 @@ Requirements
 
 - `bash`
 - `ffmpeg`
+- `perl` (only for `get-subscribers`)
 - Run these tools out of this directory - they are bash scripts that source
   files using relative locations.
 
@@ -25,7 +26,7 @@ YouTube.
 
 - `shuffle-and-loop-music` takes a directory full of mp3 files, shuffles them,
   and continually "plays" them (decodes them with `ffmpeg`) to a named pipe.
-  This program will encode as fast as it can and is blocked by the consumer of
+  This program will decodes as fast as it can and is blocked by the consumer of
   the pipe.
 - `stream-to-youtube` takes a named pipe to read audio data from, a video file
   to loop, and a text file to render onto the video and streams the data to
@@ -50,7 +51,6 @@ mp3s to the directory and they will be picked up automatically without any
 programs needing to be restarted.
 
 Note that the `audio-pipe` does *not* need to exist before running these tools.
-
 
 Tools
 -----

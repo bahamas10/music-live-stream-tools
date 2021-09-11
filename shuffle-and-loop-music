@@ -3,7 +3,7 @@
 # Shuffle a directory of mp3 files and continuosly stream their decoded data to
 # a given fifo.
 #
-# Usage: shuffle-and-loop-music <mp3-dir> <pipe> [now-playing]
+# Usage: shuffle-and-loop-music <mp3-dir> <pipe> [now-playing] [cmd [args ...]]
 #
 # Author: Dave Eddy <dave@daveeddy.com>
 # Date: September 04, 2021

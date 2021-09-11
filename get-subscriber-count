@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Usage: get-subscriber-count <channel> [file] [interval]
+# Usage: get-subscriber-count <channel> [file] [interval] [cmd [args ...]]
 #
 # Author: Dave Eddy <dave@daveeddy.com>
 # Date: September 04, 2021
