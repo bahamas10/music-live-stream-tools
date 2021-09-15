@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# Config file for the main streaming program.  This is a bash file that is
+# sourced.
+#
+
+# output image settings
+resolution='1920x1080'
+preset='ultrafast'
+tune='stillimage'
+bitrate='3500k'
+maxrate='5000k'
+bufsize='8000k'
+fps=6
+
+# input/output audio settings
+audiochannels=2
+audiobits='192k'
+audiorate=44100
+audiopipe='/path/to/audio-pipe-fifo'
+
+# background image or video
+bgtype='image'
+bgfile='/path/to/image.jpg'
+
+# text overlay options, set "textoverlay=1" to enable
+textoverlay=1
+fontcolor='#00aa00'
+fontsize=42
+textlocation='x=40:y=38'
+fontfile='/path/to/font.ttf'
+textfile='/path/to/message.txt'
+
+# output RTMP stream settings
+rtmpurl='rtmp://a.rtmp.youtube.com/live2/<key>'

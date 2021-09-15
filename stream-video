@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+#
+# Generate a video and stream to RTMP
+#
+# Author: Dave Eddy <dave@daveeddy.com>
+# Date: September 04, 2021
+# License: MIT
+
+. ./lib/utils || exit 1
+
+usage() {
+	local prog=${0##*/}
+	cat <<-EOF
+	Usage: $prog [options] [output]
+
+	Options:
+	  -c <config>    required: config file to read
+	  -n             optional: dry-run, just print the command and exit
+
+	Arguments
+	  - Specifying '-' as the last argument will tell this program to output
+	    to stdout instead of streaming to youtube.  This can then be piped
+	    to ffplay for testing like:
+
+	      $prog ... - | ffplay -f flv -
+	EOF
+}
+
+# list of config variables required
+configvarsmain=(
+	resolution preset tune bitrate maxrate bufsize fps
+	audiochannels audiobits audiorate audiopipe
+	bgtype bgfile
+)
+configvarsoutput=(
+	rtmpurl
+)
+configvarstext=(
+	textoverlay fontcolor fontsize textlocation fontfile
+	textfile
+)
+configvarsall=(
+	"${configvarsmain[@]}" "${configvarsoutput[@]}" "${configvarstext[@]}"
+)
+
+# parse arguments
+configfile=
+dryrun='false'
+while getopts 'c:hn' option; do
+	case "$option" in
+		c) configfile=$OPTARG;;
+		h) usage; exit 0;;
+		n) dryrun='true';;
+		*) usage; exit 1;;
+	esac
+done
+shift "$((OPTIND - 1))"
+output=$1
+
+[[ -n $configfile ]] || { usage; exit 1; }
+
+# clear config variables
+for var in "${configvarsall[@]}"; do
+	unset "$var"
+done
+
+# source config file
+. "$configfile" || fatal "failed to read config file $configfile"
+
+# sanity check config file
+requiredvars=("${configvarsmain[@]}")
+
+if [[ $output != '-' ]]; then
+	requiredvars=("${configvarsoutput[@]}")
+fi
+
+if [[ $textoverlay == '1' ]]; then
+	requiredvars=("${configvarstext[@]}")
+fi
+
+for name in "${requiredvars[@]}"; do
+	[[ -n ${!name} ]] || fatal "config var '$name' not supplied"
+done
+
+# ensure the fifo exists and is held open by this program
+mkfifo "$audiopipe" &>/dev/null
+[[ -p $audiopipe ]] || fatal "$audiopipe is not a pipe"
+exec 7<>"$audiopipe"
+
+# figure out output stream
+if [[ $output != '-' ]]; then
+	output=$rtmpurl
+fi
+
+# build ffmpeg command + arguments
+cmd=()
+$dryrun && cmd+=(echo)
+cmd+=(ffmpeg)
+
+# audio input
+cmd+=(
+	-re -stream_loop -1 -f s16le -acodec pcm_s16le
+	-ar "$audiorate" -ac "$audiochannels" -i pipe:
+)
+
+# background video or image input
+case "$bgtype" in
+	'image') cmd+=(-loop 1 -framerate "$fps" -i "$bgfile");;
+	'video') cmd+=(-stream_loop -1 -i "$bgfile");;
+	*) fatal "unknown bgtype $bgtype";;
+esac
+
+# combine audio and video
+cmd+=(-map 0:a -map 1:v)
+
+# text overlay (optional)
+if [[ $textoverlay == '1' ]]; then
+	cmd+=(-vf "drawtext=expansion=none:fontfile=$fontfile:textfile=$textfile:reload=1:fontcolor=$fontcolor:fontsize=$fontsize:$textlocation")
+fi
+
+# output audio settings
+cmd+=(-acodec aac -ac "$audiochannels" -b:a "$audiobits" -ar "$audiorate")
+
+# output video settings
+doublefps=$((fps * 2))
+cmd+=(-vcodec libx264 -b:v "$bitrate")
+cmd+=(-x264-params "keyint=$doublefps:min-keyint=$doublefps:scenecut=-1")
+cmd+=(-r "$fps" -g "$doublefps")
+cmd+=(-maxrate "$maxrate" -bufsize "$bufsize")
+cmd+=(-preset "$preset" -tune "$tune")
+cmd+=(-s "$resolution" -f flv)
+
+# output file / stream
+cmd+=("$output")
+
+# run command!
+"${cmd[@]}" < "$audiopipe"
