@@ -12,7 +12,7 @@ channel=$1
 file=$2
 interval=$3
 
-shift 3
+shift; shift; shift
 
 usage() {
 	local prog=${0##*/}

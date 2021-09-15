@@ -15,7 +15,7 @@ dir=$1
 pipe=$2
 nowplaying=$3
 
-shift 3
+shift; shift; shift
 
 # audio config
 samplerate=44100
